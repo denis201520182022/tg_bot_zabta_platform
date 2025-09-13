@@ -1,0 +1,10 @@
+aiogram
+aiohttp
+phonenumbers
+python-dotenv
+sqlalchemy 
+aiosqlite
+
+gspread 
+google-auth-oauthlib 
+pandas
