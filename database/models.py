@@ -4,8 +4,10 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.types import DateTime
 import datetime
+from config import DATABASE_URL
 
-engine = create_async_engine("sqlite+aiosqlite:///bot.db")
+# Заменяем создание движка на новое, для PostgreSQL
+engine = create_async_engine(DATABASE_URL)
 async_session = async_sessionmaker(engine)
 
 class Base(AsyncAttrs, DeclarativeBase):
