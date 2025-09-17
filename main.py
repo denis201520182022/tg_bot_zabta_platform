@@ -1,61 +1,45 @@
 # main.py
-
 import asyncio
 import logging
-from aiohttp import web
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config import BOT_TOKEN
 from handlers import user_handlers, admin_handlers
 from database.models import async_main as db_init
-from webhook.handlers import notify_handler
 from logging_config import setup_logging
-
-# Функция, которая будет запускать polling бота
-async def start_bot(dp: Dispatcher, bot: Bot):
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
-
-# Функция, которая будет запускать веб-сервер
-async def start_webapp(app: web.Application, host: str, port: int):
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, host, port)
-    logging.info(f"Веб-сервер запущен на http://{host}:{port}")
-    await site.start()
-    # Этот await будет "висеть", пока приложение работает
-    await asyncio.Event().wait()
+from scheduler import check_new_calls_and_notify
 
 async def main():
-    
     setup_logging()
     logger = logging.getLogger(__name__)
     logger.info("Запуск бота...")
-    
 
-    # Инициализация БД
     await db_init()
 
-    # Инициализация бота и диспетчера
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher(storage=MemoryStorage())
+    
     dp.include_router(admin_handlers.router)
     dp.include_router(user_handlers.router)
     
-    # Создание веб-приложения
-    app = web.Application()
-    # "Прокидываем" объект бота в веб-приложение, чтобы иметь к нему доступ в хендлере
-    app["bot"] = bot
-    # Регистрируем наш эндпоинт
-    app.router.add_post("/api/notify", notify_handler)
-
-    # Запускаем обе задачи (бот и веб-сервер) одновременно
-    await asyncio.gather(
-        start_bot(dp, bot),
-        start_webapp(app, host="localhost", port=8080)
+    # --- Настройка и запуск планировщика ---
+    scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
+    scheduler.add_job(
+        check_new_calls_and_notify,
+        trigger='interval',
+        #seconds=100,
+        minutes=3,
+        kwargs={'bot': bot}
     )
+    scheduler.start()
+    
+    logger.info("Планировщик запущен и настроен.")
+
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
     try:

@@ -29,6 +29,7 @@ class UserConfig(Base):
     bot_id: Mapped[str] = mapped_column(String)
     api_key: Mapped[str] = mapped_column(String)
     trunk_id: Mapped[str] = mapped_column(String)
+    last_checked_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
 
 # НОВАЯ ТАБЛИЦА: Шаблоны уведомлений
 class NotificationTemplate(Base):

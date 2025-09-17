@@ -50,9 +50,8 @@ def admin_keyboard():
     builder.button(text="📎 Назначить данные")
     builder.button(text="📄 Показать шаблон")
     builder.button(text="✏️ Редактировать шаблон")
-    builder.button(text="📢 Тестовая рассылка")
-    builder.button(text="📈 Экспорт в Google Sheets") # <--- ДОБАВЬТЕ КНОПКУ
-    builder.adjust(2, 2, 2) # Новое расположение кнопок
+    builder.button(text="📈 Экспорт в Google Sheets")
+    builder.adjust(2, 2, 1)
     return builder.as_markup(resize_keyboard=True, input_field_placeholder="Выберите действие:")
 
 # --- Обработчики команд ---
@@ -205,11 +204,14 @@ async def process_assign_trunk_id(message: types.Message, state: FSMContext):
 
 # --- Процесс управления шаблонами ---
 
-DEFAULT_TEMPLATE = """Дата и время звонка: {datetime}
-Запись разговора: {audioLink}
-Актуальность: {var_is_actual}
-Результат звонка: {var_result}
-Транскрибация: {transcription}"""
+DEFAULT_TEMPLATE = """<b>📞 Новый звонок</b>
+
+<b>Дата и время:</b> <code>{call_time}</code>
+
+<b>Результат звонка:</b>
+<pre>{summarizing_pretty}</pre>
+
+<a href="{audio_link}">▶️ Прослушать запись</a>"""
 
 @router.message(Command("get_template"))
 @router.message(F.text == "📄 Показать шаблон")
@@ -231,11 +233,14 @@ async def cmd_get_template(message: types.Message):
 async def cmd_edit_template(message: types.Message, state: FSMContext):
     admin_id = message.from_user.id
     logger.info(f"Администратор {admin_id} начал процесс редактирования шаблона.")
+    # --- ОБНОВЛЕННЫЙ ТЕКСТ-ПОДСКАЗКА ---
     text = (
         "<b>Отправьте мне новый текст шаблона.</b>\n\n"
         "Поддерживаемые переменные:\n"
-        "<code>{datetime}</code>, <code>{audioLink}</code>, <code>{transcription}</code>, "
-        "<code>{var_is_actual}</code>, <code>{var_result}</code>\n\n"
+        "<code>{call_time}</code> - Дата и время звонка\n"
+        "<code>{audio_link}</code> - Ссылка на запись\n"
+        "<code>{summarizing_pretty}</code> - Результат звонка (в формате JSON)\n\n"
+        "<i>Транскрибация будет прикреплена отдельным файлом. Используйте HTML-теги для форматирования.</i>\n\n"
         "<i>Для отмены введите /cancel.</i>"
     )
     await message.answer(

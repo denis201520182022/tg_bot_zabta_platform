@@ -18,7 +18,6 @@ admin_commands = user_commands + [
     BotCommand(command="assign", description="📎 Назначить данные пользователю"),
     BotCommand(command="get_template", description="📄 Показать текущий шаблон"),
     BotCommand(command="edit_template", description="✏️ Редактировать шаблон"),
-    BotCommand(command="test_broadcast", description="📢 Отправить тестовое уведомление"),
     BotCommand(command="export_gsheet", description="📈 Экспорт в Google Sheets")
 ]
 

@@ -3,6 +3,7 @@
 from .models import async_session, User
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
+import datetime
 
 # Функция для добавления нового пользователя
 async def add_user(tg_id: int, phone: str):
@@ -127,3 +128,29 @@ async def get_all_users_with_configs():
         )
         result = await session.execute(query)
         return result.all()
+    
+
+async def get_all_active_configs():
+    """Возвращает все активные конфигурации вместе с telegram_id пользователя."""
+    async with async_session() as session:
+        query = (
+            select(
+                User.telegram_id,
+                UserConfig.api_key,
+                UserConfig.bot_id,
+                UserConfig.last_checked_at
+            )
+            .join(UserConfig, User.phone_number == UserConfig.user_phone)
+        )
+        result = await session.execute(query)
+        return result.all()
+
+async def update_config_check_time(api_key: str, bot_id: str, check_time: datetime.datetime):
+    """Обновляет время последней проверки для конкретной конфигурации."""
+    async with async_session() as session:
+        await session.execute(
+            update(UserConfig)
+            .where(UserConfig.api_key == api_key, UserConfig.bot_id == bot_id)
+            .values(last_checked_at=check_time)
+        )
+        await session.commit()
